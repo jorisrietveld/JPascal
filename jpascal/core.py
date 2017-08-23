@@ -3,11 +3,6 @@
 # Licence: GPLv3 - General Public Licence version 3
 from enum import Enum
 
-# Token Types
-INTEGER, EOF, ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, MODULO = (
-    'INTEGER', 'EOF', 'ADDITION', 'SUBTRACTION', 'MULTIPLICATION', 'DIVISION', 'MODULO'
-)
-
 
 class ArithmeticOperator:
     """ ArithmeticOperator class
@@ -58,23 +53,43 @@ class ArithmeticOperator:
 
     @classmethod
     def get_token_name(cls, operator, default=None):
-        return cls._get_item(operator, default=default)
+        return cls._get_item(operator, default=default, as_token=True)
 
     @classmethod
     def is_valid(cls, operator):
-        return cls._get_item( operator, default=False )
+        return cls._get_item(operator, default=False)
+
 
 class ArithmeticOperation:
-
     @classmethod
     def add(cls, base, increase_by):
         return base + increase_by
 
-    def subtract(self, base, decrease_by):
+    @classmethod
+    def subtract(cls, base, decrease_by):
+        return base - decrease_by
 
+    @classmethod
+    def multiply(cls, base, times):
+        return base * times
 
+    @classmethod
+    def divide(cls, base, parts):
+        return base / parts
 
+    @classmethod
+    def by_token_name(cls, name, base, modifier):
+        if name == Token.Type.ADDITION:
+            return cls.add(base, modifier)
 
+        if name == Token.Type.SUBTRACTION:
+            return cls.subtract(base, modifier)
+
+        if name == Token.Type.MULTIPLICATION:
+            return cls.multiply(base, modifier)
+
+        if name == Token.Type.DIVISION:
+            return cls.divide(base, modifier)
 
 
 class Token(object):
@@ -83,6 +98,7 @@ class Token(object):
         This class defines an token that will be used to construct expressions. An token
         is an sequence of characters that are recognized as an valid language construct"
     """
+
     class Type(Enum):
         INTEGER = 'INTEGER'
         EOF = 'EOF'
@@ -196,33 +212,27 @@ class Interpreter(object):
             # If the current character is an digit, start reading characters until an non digits turns up. Advance the
             # current character to the non digit one and return an integer token with the value of the digit sequence.
             if self.current_character.isdigit():
-                return Token(INTEGER, self.integer())
-
+                return Token(Token.Type.INTEGER, self.integer())
 
             # If current character is an ADDITION operator, advance in code and return an ADDITION token.
             if self.current_character == ArithmeticOperator.ADDITION:
                 self.advance()
-                return Token(ADDITION, ArithmeticOperator.ADDITION)
+                return Token(Token.Type.ADDITION, ArithmeticOperator.ADDITION)
 
             # If current character is an SUBTRACTION operator, advance in code and return an SUBTRACTION token.
             if self.current_character == ArithmeticOperator.SUBTRACTION:
                 self.advance()
-                return Token(SUBTRACTION, ArithmeticOperator.SUBTRACTION)
+                return Token(Token.Type.SUBTRACTION, ArithmeticOperator.SUBTRACTION)
 
             # If current character is an MULTIPLICATION operator, advance in code and return an MULTIPLICATION token.
             if self.current_character == ArithmeticOperator.MULTIPLICATION:
                 self.advance()
-                return Token(MULTIPLICATION, ArithmeticOperator.MULTIPLICATION)
+                return Token(Token.Type.MULTIPLICATION, ArithmeticOperator.MULTIPLICATION)
 
             # If current character is an DIVISION operator, advance in code and return an DIVISION token.
             if self.current_character == ArithmeticOperator.DIVISION:
                 self.advance()
-                return Token(DIVISION, ArithmeticOperator.DIVISION)
-
-            # If current character is an modulo operator, advance in code and return an modulo token.
-            if self.current_character == ArithmeticOperator.modulo:
-                self.advance()
-                return Token(MODULO, ArithmeticOperator.modulo)
+                return Token(Token.Type.DIVISION, ArithmeticOperator.DIVISION)
 
             # If the current character is not parseable into an token raise an exception.
             self.error(
@@ -230,7 +240,7 @@ class Interpreter(object):
                     self.current_character
                 )
             )
-        return Token(EOF, None)
+        return Token(Token.Type.EOF, None)
 
     def eat(self, token_type):
         """ The eat method
@@ -259,11 +269,11 @@ class Interpreter(object):
         :return:
         """
         token = self.current_token
-        self.eat( Token.Type.INTEGER )
+        self.eat(Token.Type.INTEGER)
         return token.value
 
     def expression(self):
-        """ The expr method
+        """ The expression method
 
         The main function of the program.
         :return:
@@ -273,46 +283,17 @@ class Interpreter(object):
         # The current term (Integers, Chars, etc)
         result = self.term()
 
-        while self.current_token.Type in (
+        while self.current_token.type in (
                 Token.Type.ADDITION,
                 Token.Type.SUBTRACTION,
                 Token.Type.MULTIPLICATION,
                 Token.Type.DIVISION):
 
-            current_operator = ArithmeticOperator.get_token_name(self.current_token, default=False)
+            current_operator = ArithmeticOperator.get_token_name(self.current_token.type, default=False)
+
             if current_operator:
                 self.eat(current_operator)
-                result = result
+                # Execute an arithmetic operation like: {result} {operator} {next_term}
+                result = ArithmeticOperation.by_token_name(current_operator, result, self.term())
 
-
-
-        # Consume the integer placed on left side of the arithmetic operator.
-        left = self.current_token
-        self.eat(INTEGER)
-
-        # Consume the arithmetic operator.
-        operator = self.current_token
-
-        if ArithmeticOperator.is_valid( operator ):
-
-        if ArithmeticOperator.is_addition(operator.value):
-            self.eat(ADDITION)
-
-        if ArithmeticOperator.is_subtraction(operator.value):
-            self.eat(SUBTRACTION)
-
-        if ArithmeticOperator.is_multiplication(operator.value):
-            self.eat(MULTIPLICATION)
-
-        if ArithmeticOperator.is_division(operator.value):
-            self.eat(DIVISION)
-
-        if ArithmeticOperator.is_modulo(operator.value):
-            self.eat(MODULO)
-
-        # Consume the integer placed on right side of the arithmetic operator.
-        right = self.current_token
-        self.eat(INTEGER)
-
-        # Execute the operation. This is evil I know it, will be replaced during production after serious data breach.
-        return eval("{}{}{}".format(left.value, operator.value, right.value))
+        return result

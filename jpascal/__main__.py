@@ -1,7 +1,7 @@
 # Author: Joris Rietveld <jorisrietveld@gmail.com>
 # Created: 23-08-2017 13:38
 # Licence: GPLv3 - General Public Licence version 3
-from . import Interpreter
+from core import Interpreter
 
 
 def main():
