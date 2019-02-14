@@ -3,7 +3,6 @@
 # Licence: GPLv3 - General Public Licence version 3
 from enum import Enum
 
-
 class ArithmeticOperator:
     """ ArithmeticOperator class
 
