@@ -5,7 +5,6 @@ from .context import jpascal
 
 import unittest
 
-
 class LexerTestSuite(unittest.TestCase):
     """The test suite for the JPascal lexer.
 
