@@ -2,7 +2,7 @@ JPascal Interpreter
 ===================
 I created this project while following an tutorial on`this site _TutorialSite` because
 I wanted to learn  to learn more about how compilers and interpreters work, Just for fun.
-I'm also infested in learning more about the python language because it is used a lot in machine learning and 
+I'm also intrested in learning more about the python language because it is used a lot in machine learning and 
 I never went much deeper in the language than some basic calculators and a web application.
 .. _TutorialSite: http://www.python.org/
 
